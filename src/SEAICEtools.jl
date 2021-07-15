@@ -283,7 +283,48 @@ function getSondeData(sonde_file::String; vars=(:WD, :WS, :T) )
     return Dict(:time=>time, :height=>height[:,1], :T=>T_C) #, U=uwind, V=vwind, RH=rh, WS=wind, WD=wdir, QV=qv, Pa=pa, θ = θ)
 
 end
+#----/
 
+
+# ****************************************************
+# -- Get ICON profiles
+function getICONgData(sonde_file::String; vars=(:WD, :WS, :T) )
+    ncin = NCDataset(sonde_file)
+    T_C  = copy(ncin["temperature"][:,:])  # K
+    @. T_C -= 273.15  # °C
+    rh = copy(ncin["rh"][:,:])
+    time = ncin["time"][:]
+    height= copy(ncin["height"][:]) # km
+
+    uwind = ncin["uwind"][:,:]; # m/s
+    miss_val = ncin["uwind"].attrib["missing_value"]
+    uwind[uwind .≈ miss_val] .= NaN
+
+    vwind = ncin["vwind"][:,:]; # m/s
+    miss_val = ncin["vwind"].attrib["missing_value"]
+    vwind[vwind .≈ miss_val] .= NaN
+
+    ## Potential temperature
+    ##θ = ncin["potential_temp"][:,:] # K
+    ##miss_val = ncin["potential_temp"].attrib["missing_value"]
+    ##θ[θ .≈ miss_val] .= NaN
+    
+    ## New variables for IVT
+    qv = ncin["q"][:,:];  # gr/gr
+    miss_val = ncin["q"].attrib["missing_value"]
+    qv[qv .≈ miss_val] .= NaN
+    
+    pa = ncin["pressure"][:,:];  # Pa
+    miss_val = ncin["pressure"].attrib["missing_value"]
+    pa[pa .≈ miss_val] .= NaN
+    
+    close(ncin)
+    wdir = similar(uwind)
+    @. wdir = mod(atand(uwind/vwind), 360)
+    return Dict(:time=>time, :height=>height[:,1], :T=>T_C, :WD=>wdir)
+
+end
+# ----/
 
 # Calculating Integrated Water Vapour Transport
 function getIVT(rs)
