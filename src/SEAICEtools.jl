@@ -230,60 +230,6 @@ function Get_MATVAR_From_Index(ii, lon, lat, SIC)
 end
 # +++
 
-## ***********************************
-## **** temporal helper functions ****
-# get file from pattern:
-function getFilePattern(path::String, product::String, yy, mm ,dd)
-    base_dir = joinpath(path, product, @sprintf("%04d", yy))
-    list_file = readdir(base_dir, join=true)
-    pattern = @sprintf("%04d%02d%02d", yy, mm, dd)
-    ofile = filter(x->all(occursin.(pattern, x)), list_file)
-    ofile = isempty(ofile) ? "$dd.$mm.$yy none" : ofile[1]  
-    return ofile
-end
-# +++
-
-# Get the wind vector from Model/RadioSonde
-function getSondeData(sonde_file::String; vars=(:WD, :WS, :T) )
-    ncin = NCDataset(sonde_file)
-    T_C  = copy(ncin["temp"][:,:])
-    rh = copy(ncin["rh"][:,:])
-    time = ncin["time"][:]
-        height= copy(ncin["height"][:]) # km
-    wind = copy(ncin["wspd"][:,:])  # m/s
-    miss_val = ncin["wspd"].attrib["missing_value"]
-    wind[wind .≈ miss_val] .= NaN
-    wdir = copy(ncin["wdir"][:,:])  # deg
-    miss_val = ncin["wdir"].attrib["missing_value"]
-    wdir[wdir .≈ miss_val] .= NaN
-
-    uwind = ncin["u_wind"][:,:]; # m/s
-    miss_val = ncin["u_wind"].attrib["missing_value"]
-    uwind[uwind .≈ miss_val] .= NaN
-
-    vwind = ncin["v_wind"][:,:]; # m/s
-    miss_val = ncin["v_wind"].attrib["missing_value"]
-    vwind[vwind .≈ miss_val] .= NaN
-
-    ## Potential temperature
-    θ = ncin["potential_temp"][:,:] # K
-    miss_val = ncin["potential_temp"].attrib["missing_value"]
-    θ[θ .≈ miss_val] .= NaN
-    
-    ## New variables for IVT
-    qv = ncin["sh"][:,:];  # gr/gr
-    miss_val = ncin["sh"].attrib["missing_value"]
-    qv[qv .≈ miss_val] .= NaN
-    
-    pa = ncin["bar_pres"][:,:];  # kPa
-    miss_val = ncin["bar_pres"].attrib["missing_value"]
-    pa[pa .≈ miss_val] .= NaN
-    
-    close(ncin)
-    return Dict(:time=>time, :height=>height[:,1], :T=>T_C) #, U=uwind, V=vwind, RH=rh, WS=wind, WD=wdir, QV=qv, Pa=pa, θ = θ)
-
-end
-#----/
 
 
 # ****************************************************
@@ -326,57 +272,5 @@ function getICONgData(sonde_file::String; vars=(:WD, :WS, :T) )
 end
 # ----/
 
-# Calculating Integrated Water Vapour Transport
-function getIVT(rs)
-    ΔP = rs.Pa[2:end,:] - rs.Pa[1:end-1,:]
-    ΔP *= 1e3 # [Pa]
-    tmp_u = rs.QV .* rs.U
-    tmp_v = rs.QV .* rs.V
-    z_top = 235  # index of the top layer to consider ≈ 306 hPa.
-    # calculating IVT components u and v:
-    IVT_u = map(1:z_top) do z
-        sum(tmp_u[z:z_top,:] .* ΔP[z:z_top,:], dims=1)
-    end
-    IVT_v = map(1:z_top) do z
-        sum(tmp_v[z:z_top,:] .* ΔP[z:z_top,:], dims=1)
-    end
-    
-    IVT_u = vcat(IVT_u...)
-    IVT_v = vcat(IVT_v...)
-    IVT_vec = cat(IVT_u, IVT_v, dims=3)
-    IVT_vec /= 9.81
-    # calculating total IVT:
-    IVT = sqrt.(IVT_u.^2 + IVT_v.^2)
-    IVT /= 9.81
-    
-    return IVT, IVT_vec
-end
-
-# Get Maximum IVT index and values
-function getMaxIVT_θ(IVT::Array{Float64,2})
-    
-    ii = argmax(IVT, dims=1)
-    # converting the CartesianIndexes ii from 2-D to 1-D :
-    ii = vcat(ii...)
-
-    # retrieving the max of IVT into a vector:
-    IVTmax = IVT[ii][:]
-    
-    return ii, IVTmax
-end
-
-# Calculating Richardson Number
-function Ri_N(rs)
-    θv = rs.θ.*(1.0 .+ 0.6*rs.QV)  # K
-    Δθv = θv[2:end,:] .- θv[1,:]'  # K
-    ΔZ = 1e3*(rs.height[2:end] .- rs.height[1])  # m
-    ΔU = rs.U[2:end,:] .- rs.U[1,:]'  # m/s
-    N2 = (Δθv./ΔZ)./θv[1:end-1,:]
-    N2 *= 9.81
-
-    tmp = (ΔU./ΔZ).^2
-    Ri = N2./tmp
-    return N2, Ri
-end
 
 # end of script.
