@@ -1,10 +1,11 @@
 # Script containing functions for Sea Ice analysis
 # mainly thought to be used on the Arctic
 
-using NCDatasets
 using Navigation
 using Printf
 
+
+module SEAICE
 # *********************************************************
 # Functions:
 
@@ -40,7 +41,7 @@ end
 ## ---------------------------------------------------------------------
 
 """
-indexes = Get\\_Sector\\_Indexes(θ₀::Float32, θ₁::Float32; R_lim=50f0)
+indexes = Get\\_Sector\\_Indexes(θ₀::Float32, θ₁::Float32, θ_all::Matrix{Real}; R_lim=50f0)
 
 Given an Array of azimuthal angles and radius the function returns 
 the Array's indexes corresponding to a sector or semi-circle W-N-E.
@@ -55,7 +56,7 @@ Return:
     indexes: Array's indexes laying within the sector :: Int64
 
 """
-function Get_Sector_Indexes(θ₀::Float32, θ₁::Float32; R_lim=50f0)
+function Get_Sector_Indexes(θ₀::Real, θ₁::Real, θ_all::Matrix{<:Real}; R_lim=50f0)
     θ₀ , θ₁ = sort([θ₀ , θ₁]);
     idx = θ₀ < 0.0 ?
         ((θ₀ + 360f0) .≤ θ_all .< 360f0 ) .| (θ_all .≤ θ₁) : (θ₀ .≤ θ_all .≤ θ₁);
@@ -231,46 +232,47 @@ end
 # +++
 
 
-
-# ****************************************************
-# -- Get ICON profiles
-function getICONgData(sonde_file::String; vars=(:WD, :WS, :T) )
-    ncin = NCDataset(sonde_file)
-    T_C  = copy(ncin["temperature"][:,:])  # K
-    @. T_C -= 273.15  # °C
-    rh = copy(ncin["rh"][:,:])
-    time = ncin["time"][:]
-    height= copy(ncin["height"][:]) # km
-
-    uwind = ncin["uwind"][:,:]; # m/s
-    miss_val = ncin["uwind"].attrib["missing_value"]
-    uwind[uwind .≈ miss_val] .= NaN
-
-    vwind = ncin["vwind"][:,:]; # m/s
-    miss_val = ncin["vwind"].attrib["missing_value"]
-    vwind[vwind .≈ miss_val] .= NaN
-
-    ## Potential temperature
-    ##θ = ncin["potential_temp"][:,:] # K
-    ##miss_val = ncin["potential_temp"].attrib["missing_value"]
-    ##θ[θ .≈ miss_val] .= NaN
-    
-    ## New variables for IVT
-    qv = ncin["q"][:,:];  # gr/gr
-    miss_val = ncin["q"].attrib["missing_value"]
-    qv[qv .≈ miss_val] .= NaN
-    
-    pa = ncin["pressure"][:,:];  # Pa
-    miss_val = ncin["pressure"].attrib["missing_value"]
-    pa[pa .≈ miss_val] .= NaN
-    
-    close(ncin)
-    wdir = similar(uwind)
-    @. wdir = mod(atand(uwind/vwind), 360)
-    return Dict(:time=>time, :height=>height[:,1], :T=>T_C, :WD=>wdir)
-
-end
-# ----/
-
+end # .../ end of module
 
 # end of script.
+
+
+### ****************************************************
+### -- Get ICON profiles
+##function getICONgData(sonde_file::String; vars=(:WD, :WS, :T) )
+##    ncin = NCDataset(sonde_file)
+##    T_C  = copy(ncin["temperature"][:,:])  # K
+##    @. T_C -= 273.15  # °C
+##    rh = copy(ncin["rh"][:,:])
+##    time = ncin["time"][:]
+##    height= copy(ncin["height"][:]) # km
+##
+##    uwind = ncin["uwind"][:,:]; # m/s
+##    miss_val = ncin["uwind"].attrib["missing_value"]
+##    uwind[uwind .≈ miss_val] .= NaN
+##
+##    vwind = ncin["vwind"][:,:]; # m/s
+##    miss_val = ncin["vwind"].attrib["missing_value"]
+##    vwind[vwind .≈ miss_val] .= NaN
+##
+##    ## Potential temperature
+##    ##θ = ncin["potential_temp"][:,:] # K
+##    ##miss_val = ncin["potential_temp"].attrib["missing_value"]
+##    ##θ[θ .≈ miss_val] .= NaN
+##    
+##    ## New variables for IVT
+##    qv = ncin["q"][:,:];  # gr/gr
+##    miss_val = ncin["q"].attrib["missing_value"]
+##    qv[qv .≈ miss_val] .= NaN
+##    
+##    pa = ncin["pressure"][:,:];  # Pa
+##    miss_val = ncin["pressure"].attrib["missing_value"]
+##    pa[pa .≈ miss_val] .= NaN
+##    
+##    close(ncin)
+##    wdir = similar(uwind)
+##    @. wdir = mod(atand(uwind/vwind), 360)
+##    return Dict(:time=>time, :height=>height[:,1], :T=>T_C, :WD=>wdir)
+##
+##end
+### ----/
