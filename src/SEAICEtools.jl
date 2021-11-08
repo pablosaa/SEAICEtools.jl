@@ -1,6 +1,7 @@
 # Script containing functions for Sea Ice analysis
 # mainly thought to be used on the Arctic
 
+# TODO: function Get_Azimuthal_Indexes improve Δθ =f(ρ)
 
 module SEAICE
 
@@ -141,15 +142,15 @@ Initial and final azimuthal angles: θ₀ , θ₁
 Optional parameters are: R_lim (default 50km) and Ncirc (default 180)
     
 """
-function Create_Semi_Circle(P_nsa::Point, θ₀::Float64, θ₁::Float64;
-                            R_lim=50e0, Ncirc=180)
+function Create_Semi_Circle(P_nsa::Point, θ₀::T, θ₁::T;
+                            R_lim=50e3, Ncirc=180) where T<:Real
     # * semi-circle to draw borders:
     
     θ₀ = ifelse(θ₀ > θ₁, θ₀ -= 360e0, θ₀)
         
-    θ = Base.range(θ₀, stop=θ₁, length=Ncirc);
-    ρ = repeat(R_lim, Ncirc)  #map(x-> R_lim, ones(Ncirc)); # [m];
-    y = repeat(P_nsa, Ncirc) #map(x-> P_nsa, ones(Ncirc));
+    θ = Base.range(Float64(θ₀), stop=Float64(θ₁), length=Ncirc);
+    ρ = map(x-> Float64(R_lim), ones(Ncirc)); # [m]; repeat([R_lim], Ncirc)  #
+    y = map(x-> P_nsa, ones(Ncirc)); #repeat([P_nsa], Ncirc) #
     P_circ = map(destination_point, y, ρ, θ);
 
     return P_circ
@@ -166,12 +167,13 @@ The input variable can be scalar or matrix:
 function Get_LonLat_From_Point(P₀::Point)
     return P₀.λ, P₀.ϕ
 end
-function Get_LonLat_From_Point(P₀::Matrix{Point{Float64}})
-    return map(x-> (x.λ, x.ϕ), P₀) |> x->vcat(x...) 
-end
-    #Lat = map(x-> x.ϕ, P₀);
-    #Lon = map(x-> x.λ, P₀);
+function Get_LonLat_From_Point(P₀::Vector)
+    Lat = map(x-> x.ϕ, P₀);
+    Lon = map(x-> x.λ, P₀);
 
+    return Lon, Lat  #map(x-> (x.λ, x.ϕ), P₀) |> x->vcat(x...) 
+end
+    
 
 # *>*>*>*>*>*> Following function not used!!! *>*>*>*>
 function Extract_SIC_From_Sector(P_circ::Point)
