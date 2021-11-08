@@ -1,11 +1,13 @@
 # Script containing functions for Sea Ice analysis
 # mainly thought to be used on the Arctic
 
+
+module SEAICE
+
 using Navigation
 using Printf
 
 
-module SEAICE
 # *********************************************************
 # Functions:
 
@@ -22,20 +24,30 @@ Return:
     θ, ρ : as Arrays centered in (lon\\_p, lat\\_p)
 
 """
-function LonLat_To_CenteredPolar(lon_p::Float64, lat_p::Float64,
-                                 lon::Array{Float64,2}, lat::Array{Float64,2} )
+function LonLat_To_CenteredPolar(Origin_coor::Point{T}, Grid_coor::Matrix{Point{T}}) where T<:Real
+    ρ_all = map(x -> distance(Origin_coor, x), Grid_coor);
+    ρ_all /= 1f3;   # [km]
+    θ_all = map(x -> bearing(Origin_coor, x), Grid_coor);
+
+    return θ_all, ρ_all
+end
+function LonLat_To_CenteredPolar(lat_p::T, lon_p::T, 
+                                 lat::Matrix{T}, lon::Matrix{T} ) where T<:Real
+
     # Finding the nearest (lat, lon) to NSA:
-    lonlat =findall(isapprox.(lat_p, lat; atol=1e-2) .& isapprox.(lon_p, lon; atol=1e-2) );
+    #lonlat =findall(isapprox.(lat_p, lat; atol=1e-2) .& isapprox.(lon_p, lon; atol=1e-2) );
     #minlat, minlon = argmin(abs.(nsa_lat .- lat)), argmin(abs.(nsa_lon .- lon));
     # Converting all latidue and longitude grid to azimuth and distance
     # with help of Navigation package:
     P_nsa = Point(lat_p, lon_p);
     P_all = Point.(lat, lon);
-    ρ_all = map(x -> distance(P_nsa, x), P_all);
-    ρ_all /= 1f3;   # [km]
-    θ_all = map(x -> bearing(P_nsa, x), P_all);
 
-    return θ_all, ρ_all
+    return LonLat_To_CenteredPolar(P_nsa, P_all)
+    ###ρ_all = map(x -> distance(P_nsa, x), P_all);
+    ###ρ_all /= 1f3;   # [km]
+    ###θ_all = map(x -> bearing(P_nsa, x), P_all);
+
+    ###return θ_all, ρ_all
 end
 
 ## ---------------------------------------------------------------------
@@ -56,7 +68,7 @@ Return:
     indexes: Array's indexes laying within the sector :: Int64
 
 """
-function Get_Sector_Indexes(θ₀::Real, θ₁::Real, θ_all::Matrix{<:Real}; R_lim=50f0)
+function Get_Sector_Indexes(θ₀::T, θ₁::T, θ_all::Matrix, ρ_all::Matrix; R_lim=50f0) where T<:Real
     θ₀ , θ₁ = sort([θ₀ , θ₁]);
     idx = θ₀ < 0.0 ?
         ((θ₀ + 360f0) .≤ θ_all .< 360f0 ) .| (θ_all .≤ θ₁) : (θ₀ .≤ θ_all .≤ θ₁);
@@ -75,28 +87,46 @@ Function to extract the indexes corresponding to a given fixed angle from an
 Array of azimuthal angles from a sector of interest.
 
 """
-function Get_Azimuthal_Indexes(θ_wind::Float32,
-                               θ_sec::Array{Float64,1},
-                               ρ_sec::Array{Float64,1};
-                               Δθ = 5f0, R_lim = 50f0)
+##function Get_Azimuthal_Indexes(θ_wind::T,
+##                               θ_sec::Matrix{T},
+##                               ρ_sec::Matrix{T};
+##                               Δθ = 5f0, R_lim = 50f0) where T<:Real
+##    # Δθ  is the tolerance for azimuthal angle.
+##    if @isdefined(θ_sec) && @isdefined(ρ_sec)
+##        idx_wind = findall(isapprox.(θ_sec, θ_wind, atol=Δθ) .& (ρ_sec .< R_lim));
+##        return idx_wind
+##    else
+##        error("Arrays θ_sec and/or ρ_sec are not defined as global variables!")
+##    end
+##end
+
+function Get_Azimuthal_Indexes(θ_wind::T,
+                               θ_sec::Vector,
+                               ρ_sec::Vector;
+                               Δθ = 5f0, R_lim = 50f0) where T<:Real
     # Δθ  is the tolerance for azimuthal angle.
     if @isdefined(θ_sec) && @isdefined(ρ_sec)
-        idx_wind = findall(isapprox.(θ_sec, θ_wind, atol=Δθ) .& (ρ_sec .< R_lim));
-        return idx_wind
+        ii = findall(ρ_sec .≤ R_lim)
+        idx_wind = findall(x -> x<Δθ, abs.(θ_wind .- θ_sec[ii]))
+        return ii[idx_wind]
     else
-        error("Arrays θ_sec and/or D_sec are not defined as global variables!")
+        error("Arrays θ_sec and/or ρ_sec are not defined as global variables!")
     end
 end
+
 
 # ---------------------------------------------------------------------------
 
 """
 Function to extract SIC from a given azimuthal indexes:
 """
-function SIC_from_Azimuth(θ_wind::Float32,
-                          θ_sec::Array{Float64,2},
-                          D_sec::Array{Float64,2};                          
-                          Δθ = 5f0, R_lim = 50f0)
+function SIC_from_Azimuth(θ_wind::T,
+                          θ_sec::Matrix,
+                          D_sec::Matrix,
+                          lon::Matrix,
+                          lat::Matrix,
+                          SIC::Matrix;
+                          Δθ = 5f0, R_lim = 50f0) where T<:Real
     # Δθ  is the tolerance for azimuthal angle.
     idx_wind = Get_Azimuthal_Indexes(θ_wind, θ_sec)
        
@@ -114,13 +144,12 @@ Optional parameters are: R_lim (default 50km) and Ncirc (default 180)
 function Create_Semi_Circle(P_nsa::Point, θ₀::Float64, θ₁::Float64;
                             R_lim=50e0, Ncirc=180)
     # * semi-circle to draw borders:
-    R_lim *= 1e3;
     
     θ₀ = ifelse(θ₀ > θ₁, θ₀ -= 360e0, θ₀)
         
     θ = Base.range(θ₀, stop=θ₁, length=Ncirc);
-    ρ = map(x-> R_lim, ones(Ncirc)); # [m];
-    y = map(x-> P_nsa, ones(Ncirc));
+    ρ = repeat(R_lim, Ncirc)  #map(x-> R_lim, ones(Ncirc)); # [m];
+    y = repeat(P_nsa, Ncirc) #map(x-> P_nsa, ones(Ncirc));
     P_circ = map(destination_point, y, ρ, θ);
 
     return P_circ
@@ -128,12 +157,23 @@ end
 
 # --------------------------------------------------------------------------
 
+"""
+Function to extract the Lontitude and Latitude from a ::Point type variable.
+The input variable can be scalar or matrix:
+> lon, lat = Get_LonLat_From_Point(P₀::Point)
+> lon, lat = Get_LonLat_From_Point(P₀::Matrix{Point})
+"""
 function Get_LonLat_From_Point(P₀::Point)
-    y = map(x-> x.ϕ, P₀);
-    x = map(x-> x.λ, P₀);
-    return x, y
+    return P₀.λ, P₀.ϕ
 end
+function Get_LonLat_From_Point(P₀::Matrix{Point{Float64}})
+    return map(x-> (x.λ, x.ϕ), P₀) |> x->vcat(x...) 
+end
+    #Lat = map(x-> x.ϕ, P₀);
+    #Lon = map(x-> x.λ, P₀);
 
+
+# *>*>*>*>*>*> Following function not used!!! *>*>*>*>
 function Extract_SIC_From_Sector(P_circ::Point)
     ## Extracting SIC for semi-circle:
     x, y = Get_LonLat_From_Point(P_circ)
