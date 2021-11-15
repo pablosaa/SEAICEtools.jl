@@ -88,33 +88,37 @@ Function to extract the indexes corresponding to a given fixed angle from an
 Array of azimuthal angles from a sector of interest.
 
 """
+function Get_Azimuthal_Indexes(θ_wind::T,
+                               θ_sec::Vector,
+                               ρ_sec::Vector;
+                               Δθ = 0.3f0, R_lim = 50f0) where T<:Real
+    # Δθ  is the tolerance for azimuthal angle.
+    thr_θρ = ((Δθ, 0, 15), (Δθ/2, 15, 25), (Δθ/3, 25, 35),(Δθ/6, 35, R_lim))
+    U = sind.(θ_sec)
+    V = cosd.(θ_sec)
+    δW = @. (U - sind(θ_wind))^2 + (V - cosd(θ_wind))^2 |> sqrt
+
+    idx_radial = []
+    foreach(thr_θρ) do th
+	ii = findall(th[2] .< ρ_sec .≤ th[3])
+	jj=findall(≤(th[1]), δW[ii] )
+	push!(idx_radial, ii[jj])
+    end
+    return idx_radial = vcat(idx_radial...)
+end
 ##function Get_Azimuthal_Indexes(θ_wind::T,
-##                               θ_sec::Matrix{T},
-##                               ρ_sec::Matrix{T};
+##                               θ_sec::Vector,
+##                               ρ_sec::Vector;
 ##                               Δθ = 5f0, R_lim = 50f0) where T<:Real
 ##    # Δθ  is the tolerance for azimuthal angle.
 ##    if @isdefined(θ_sec) && @isdefined(ρ_sec)
-##        idx_wind = findall(isapprox.(θ_sec, θ_wind, atol=Δθ) .& (ρ_sec .< R_lim));
-##        return idx_wind
+##        ii = findall(ρ_sec .≤ R_lim)
+##        idx_wind = findall(x -> x<Δθ, abs.(θ_wind .- θ_sec[ii]))
+##        return ii[idx_wind]
 ##    else
 ##        error("Arrays θ_sec and/or ρ_sec are not defined as global variables!")
 ##    end
 ##end
-
-function Get_Azimuthal_Indexes(θ_wind::T,
-                               θ_sec::Vector,
-                               ρ_sec::Vector;
-                               Δθ = 5f0, R_lim = 50f0) where T<:Real
-    # Δθ  is the tolerance for azimuthal angle.
-    if @isdefined(θ_sec) && @isdefined(ρ_sec)
-        ii = findall(ρ_sec .≤ R_lim)
-        idx_wind = findall(x -> x<Δθ, abs.(θ_wind .- θ_sec[ii]))
-        return ii[idx_wind]
-    else
-        error("Arrays θ_sec and/or ρ_sec are not defined as global variables!")
-    end
-end
-
 
 # ---------------------------------------------------------------------------
 
