@@ -1,7 +1,6 @@
 # Script containing functions for Sea Ice analysis
 # mainly thought to be used on the Arctic
 
-# TODO: function Get_Azimuthal_Indexes improve Δθ =f(ρ)
 
 module SEAICE
 
@@ -50,9 +49,9 @@ function LonLat_To_CenteredPolar(lat_p::T, lon_p::T,
 
     ###return θ_all, ρ_all
 end
+# ----/
 
 ## ---------------------------------------------------------------------
-
 """
 indexes = Get\\_Sector\\_Indexes(θ₀::Float32, θ₁::Float32, θ_all::Matrix{Real}; R_lim=50f0)
 
@@ -277,6 +276,9 @@ function Get_MATVAR_From_Index(ii, lon, lat, SIC)
 end
 # +++
 
+# ****************** EXTRA FILES *************************
+include("read_prod_UniBremem.jl")
+# ----/
 
 end # .../ end of module
 
