@@ -6,7 +6,7 @@ module SEAICE
 
 using Navigation
 using Printf
-
+using NCDatasets
 
 # *********************************************************
 # Functions:
@@ -48,6 +48,27 @@ function LonLat_To_CenteredPolar(lat_p::T, lon_p::T,
     ###θ_all = map(x -> bearing(P_nsa, x), P_all);
 
     ###return θ_all, ρ_all
+end
+# ----/
+
+# ---------------------------------------------------------------------
+"""
+Function to extract the indexes of Longitude and Latidue within a box
+with limits given:
+USAGE:
+> idx_box = extract_LonLat_Box(lonlim, latlim, grid_coor)
+
+WHERE:
+* lonlim::Tuple (lon_min, lon_max) [degrees]
+* latlim::Tuple (lat_min, lat_max) [degrees]
+* grid_coor::Matrix{Point}
+* idx_box::Vector{CartesianIndex{2}}
+
+the output varaible idx_box are the indexes within the box.
+"""
+function extract_LonLat_Box(lonlim::Tuple, latlim::Tuple, sic_coor::Matrix{Point{T}}) where T<:Real
+	xlon, ylat = Get_LonLat_From_Point(sic_coor)
+	return findall((lonlim[1] .≤ xlon .≤ lonlim[2]) .& (latlim[1] .≤ ylat .≤ latlim[2]))
 end
 # ----/
 
@@ -176,7 +197,12 @@ function Get_LonLat_From_Point(P₀::Vector)
 
     return Lon, Lat  #map(x-> (x.λ, x.ϕ), P₀) |> x->vcat(x...) 
 end
-    
+function Get_LonLat_From_Point(P₀::Matrix)
+    Lat = map(x-> x.ϕ, P₀);
+    Lon = map(x-> x.λ, P₀);
+
+    return Lon, Lat
+end    
 
 # *>*>*>*>*>*> Following function not used!!! *>*>*>*>
 function Extract_SIC_From_Sector(P_circ::Point)
@@ -274,10 +300,43 @@ function Get_MATVAR_From_Index(ii, lon, lat, SIC)
     #θ_w = map(i-> θ_w[i, tmp[i]]', 1:Nrow) |> x->vcat(x...);
     return ρ_w, θ_w, SIC_w, lon_w, lat_w, SIC2D_w, range
 end
-# +++
+# ----/
+
+# --------------------------------------------------------------
+# Function to make pair of vectors for lon, lat from a given list of
+# angles and distance to a center point
+"""
+Function to make pair of vectors for lon, lat from a given list of
+angles and distance to a center point
+USAGE:
+
+> lon_lines, lat_lines = create_pair_lines(ref_coor, R_lim, wind_dir)
+
+WHERE:
+* ref_coor::Point  is the initial reference point
+* R_lim::Float64 is the distance in km
+* wind_dir::Vector{Float64} is the vector with several angles in degrees
+RETURN:
+* lon_lines, lat_lines::Vector{Float64} are pairs of points with lon and lat from
+R_lim at angle wind_dir[i] to reference point ref_coor
+
+"""
+function create_pair_lines(ref_coor::Point{T}, ρ::T, WD::Vector{T}) where T<:Real
+    
+    P_lines = map(WD) do θ
+        destination_point(ref_coor, ρ, θ)
+    end
+    Nlines = length(WD)
+    lon_lines = fill(ref_coor.λ, 2Nlines)
+    lat_lines = fill(ref_coor.ϕ, 2Nlines)
+    lon_lines[1:2:end], lat_lines[1:2:end] = Get_LonLat_From_Point(P_lines)
+
+    return lon_lines, lat_lines
+end
+# ----/
 
 # ****************** EXTRA FILES *************************
-include("read_prod_UniBremem.jl")
+include("read_prod_UniBremen.jl")
 # ----/
 
 end # .../ end of module

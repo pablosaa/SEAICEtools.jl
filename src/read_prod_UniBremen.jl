@@ -63,7 +63,7 @@ by idx_sector. In case data is not found or else, SIC is returned as nothing.
 
 
 """
-function read_SIC_Bremem_product(sic_filen::String, idx_sector::Vector; SICPROD="ASI Ice Concentration")
+function read_SIC_Bremen_product(sic_filen::String, idx_sector::Vector{CartesianIndex{2}}; SICPROD="ASI Ice Concentration")
     !isfile(sic_filen) && error("$(sic_filen) can not be found!")
     !in(SICPROD, ("ASI Ice Concentration", "mersic", "asic", "msic")) && error("$(SICPROD) not supported!")
     ncin = NCDataset(sic_filen, "r")
