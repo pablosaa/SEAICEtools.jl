@@ -68,13 +68,20 @@ function read_SIC_Bremen_product(sic_filen::String, idx_sector::Vector{Cartesian
     !in(SICPROD, ("ASI Ice Concentration", "mersic", "asic", "msic")) && error("$(SICPROD) not supported!")
     ncin = NCDataset(sic_filen, "r")
     if haskey(ncin, SICPROD)
-        SIC = ifelse(isempty(idx_sector), ncin[SICPROD][:,:], ncin[SICPROD][idx_sector])
+        SIC = let flag = isempty(idx_sector)
+            tmp = ifelse(flag, ncin[SICPROD][:,:], ncin[SICPROD][idx_sector])
+            eltype(tmp) <: AbstractFloat ? tmp : Float32.(tmp)
+        end
     else
+        @warn("$(SICPROD) not found in file. Nothing returned!")
 	SIC = nothing	
     end
     # Checking for Non data values:
     if in(SICPROD, ("mersic", "asic", "msic"))
-        SIC[SIC>100f0] .= NaN
+        
+        fill_value = ncin.attrib["fill_value_int8"]
+        land_value = ncin.attrib["land_value_int8"]
+        SIC[SIC .≥ fill_value] .= NaN32
     end
     
     return SIC
