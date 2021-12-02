@@ -321,12 +321,23 @@ RETURN:
 R_lim at angle wind_dir[i] to reference point ref_coor
 
 """
-function create_pair_lines(ref_coor::Point{T}, ρ::T, WD::Vector{T}) where T<:Real
+function create_pair_lines(ref_coor::Point{T}, ρ::T, WD::Vector) where T<:Real
     
     P_lines = map(WD) do θ
         destination_point(ref_coor, ρ, θ)
     end
     Nlines = length(WD)
+    lon_lines = fill(ref_coor.λ, 2Nlines)
+    lat_lines = fill(ref_coor.ϕ, 2Nlines)
+    lon_lines[1:2:end], lat_lines[1:2:end] = Get_LonLat_From_Point(P_lines)
+
+    return lon_lines, lat_lines
+end
+function create_pair_lines(ref_coor::Point{T}, ρ::Vector, WD::Vector) where T<:Real
+    Nlines = length(WD)
+    length(ρ) != Nlines && error("R_lim and wind_dir must be same length")
+
+    P_lines = [destination_point(ref_coor, r, θ) for (r, θ) ∈ zip(ρ, WD)]
     lon_lines = fill(ref_coor.λ, 2Nlines)
     lat_lines = fill(ref_coor.ϕ, 2Nlines)
     lon_lines[1:2:end], lat_lines[1:2:end] = Get_LonLat_From_Point(P_lines)
