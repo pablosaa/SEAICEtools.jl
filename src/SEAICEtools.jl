@@ -244,7 +244,82 @@ function MatOfMat_To_Profile(VAR, ρ; ρ_bin = collect(0:5:50), myfunc::Function
     end
     return ρ_bin, VAR2d
 end
-# +++
+"""
+Sort the input VAR and Range into a given binned range vector.
+> ρ_bin, VAR_bin, ERR_bin = Sort_To_Profile(VAR, ρ)
+> ρ_bin, VAR_bin, ERR_bin = Sort_To_Profile(VAR, ρ, ρ_bin=[0:15:50])
+> ρ_bin, VAR_bin, ERR_bin = Sort_To_Profile(VAR, ρ, myfunc=median, myerr=var)
+
+INPUTS:
+* VAR::Vector containing the unsorted data
+* ρ::Vector ranges for every element of VAR
+* ρ_bin::Vector (optional) a vector with the binned values to sort
+* myfunc::Function (optional) to reduce from all values within a bin
+* myerr::Function (optional) to estimate uncertainty from applying the reduction
+
+RETURN:
+ρ_bin, VAR_bin, ERR_bin::Vector size(ρ_bin)
+
+"""
+function Sort_To_Profile(VAR, ρ; ρ_bin::Vector = Vector(0:5:50), myfunc::Function=mean, myerr::Function=std)
+
+	applyfunc(Z) = filter(!isnan, Z) |> x-> !isempty(x) ? [myfunc(x) myerr(x)] : [NaN NaN]
+    idx = [findall(low .< ρ .≤ hig) for (low, hig) in zip(ρ_bin[1:end-1], ρ_bin[2:end])]
+	varout = [isempty(k) ? [NaN NaN] : applyfunc(VAR[k]) for k ∈ idx] |> x->vcat(x...)
+	
+	return ρ_bin[2:end], varout[:,1], varout[:,2]
+end
+# ----/
+
+# **************************************************************************
+# Function to arrange wind direction selections along the range into 2D Arrays
+#
+"""
+> idx_radial, ρ2d, SIC2d, errSIC2d = wind_idx_radial(wind_dir, wind_range, θ_box, ρ_box, SIC; ρ_bin = Vector(0:5:50))
+
+INPUT:
+* wind_dir::Vector,
+* wind_range::Vector,
+* θ_box::Vector,
+* ρ_box::Vector,
+* SIC::Vector;
+* ρ_bin = Vector(0:5:50) (optional)
+
+RETURN:
+* idx_radial,
+* ρ2d,
+* SIC2d,
+* errSIC2d
+
+"""
+function wind_idx_radial(wind_dir::Vector, wind_range::Vector, θ_box::Vector, ρ_box::Vector, SIC::Vector; ρ_bin = Vector(0:5:50))
+	
+    # creating empty output variables:
+    N_ρ = length(ρ_bin)-1
+    N_t = length(wind_dir)
+    idx_radial = Vector{Any}(undef, 0)
+    medSIC2d = Matrix{AbstractFloat}(undef, N_ρ , N_t)
+    stdSIC2d = Matrix{AbstractFloat}(undef, N_ρ , N_t)
+
+    # starting loop over time index:
+    for tidx in eachindex(wind_dir)
+	idx_vec = [SEAICE.Get_Azimuthal_Indexes(wd, θ_box, ρ_box, R_lim=wr) for (wd, wr) ∈ zip(wind_dir[tidx], wind_range[tidx])]
+	# collecting all indexes for all wind directions corresponding to every time step:
+	# idx_vec::Vector{Vector{Float, N}} where N is the number of wind directions ∀ N -> variable number of ranges.
+	push!(idx_radial, idx_vec)
+
+	# calculating the gridded SIC for a fixed distance ρ (0:5:50) for every time step:
+	_, sic2d, stdsic = let idx = vcat(idx_vec...)
+	    Sort_To_Profile(SIC[idx], ρ_box[idx], ρ_bin=ρ_bin)
+	end
+
+        # feeding into 2D variables
+	medSIC2d[:, tidx] = sic2d
+	stdSIC2d[:, tidx] = stdsic
+    end
+    return idx_radial, ρ_bin, medSIC2d, stdSIC2d
+end
+# ----/
 
 # Sorting the variables to store:
 """
