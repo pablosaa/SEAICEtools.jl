@@ -2,3 +2,4 @@
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 Navigation = "cc87a3b2-3706-4f35-b5b4-b2c85061916d"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"

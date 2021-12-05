@@ -7,6 +7,7 @@ module SEAICE
 using Navigation
 using Printf
 using NCDatasets
+using Statistics
 
 # *********************************************************
 # Functions:
