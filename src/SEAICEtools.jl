@@ -11,7 +11,18 @@ using Statistics
 
 # *********************************************************
 # Functions:
+"""
+Make box limist for a given center and distance:
 
+"""
+function estimate_box(Pcenter::Point, R_lim; δR = 1e3)
+    N_S_lim = (180e0, 0e0) .|> x->Navigation.destination_point(Pcenter, R_lim+δR, x)
+    E_W_lim = (-90e0, 90e0) .|> x->Navigation.destination_point(Pcenter, R_lim+δR, x)
+    return  map(x->x.λ, E_W_lim), map(x->x.ϕ, N_S_lim)
+end
+# ----/
+
+# *********************************************************
 """
 θ, ρ = LonLat_To_CenteredPolar(lon\\_p, lat\\_p, lon, lat)
 
