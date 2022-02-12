@@ -48,18 +48,14 @@ Two type of products are supported:
 
 USAGE:
 To read AMSR2 Sea Ice database use for example:
-> SIC = read_SIC_product(filename::String, idx_sector::Vector{CartesianIndex})
-where idx_sector is a vector in element type CartesianIndex containing the indexes of the
-coordinates from which SIC data will be extracted and read.
+> SIC = read_SIC_Bremen_product(filename::String, idx_sector::Vector{CartesianIndex})
+where idx_sector is a vector in element type CartesianIndex containing the indexes of the coordinates from which SIC data will be extracted and read.
 
-> SIC = read_SIC_product(filename::String, idx_sector::Vector{CartesianIndex}, SICPRO="mersic")
-optionally uses the variable SICPRO="mersic" to read the MODIS_AMSR2 merge product for the "mersic"
-variable.
-Supported variables are "ASI Ice Concentration" for AMSR2, or "mersic", "asic" and "msic" for the
-MODIS_AMSR2 merge product.
+> SIC = read_SIC_Bremen_product(filename::String, idx_sector::Vector{CartesianIndex}, SICPRO="mersic")
+optionally uses the variable SICPRO="mersic" to read the MODIS_AMSR2 merge product for the "mersic" variable.
+Supported variables are "ASI Ice Concentration" for AMSR2, or "mersic", "asic" and "msic" for the MODIS_AMSR2 merge product.
 
-The return variable is a Vector containing the Sea Ice Concentration data for the specified sector
-by idx_sector. In case data is not found or else, SIC is returned as nothing.
+The return variable is a Vector containing the Sea Ice Concentration data for the specified sector by idx_sector. In case data is not found or else, SIC is returned as nothing.
 
 
 """
@@ -74,8 +70,9 @@ function read_SIC_Bremen_product(sic_filen::String, idx_sector::Vector{Cartesian
         end
     else
         @warn("$(SICPROD) not found in file. Nothing returned!")
-	SIC = nothing	
+	return SIC = nothing	
     end
+    
     # Checking for Non data values:
     if in(SICPROD, ("mersic", "asic", "msic"))
         
