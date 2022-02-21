@@ -435,6 +435,8 @@ end
 
 # ****************** EXTRA FILES *************************
 include("read_prod_UniBremen.jl")
+
+include("read_prod_OSISAF.jl")
 # ----/
 
 end # .../ end of module
