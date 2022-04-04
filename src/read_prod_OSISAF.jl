@@ -80,7 +80,33 @@ function read_SIC_OSISAF_product(sic_filen::String, idx_sector::Vector{Cartesian
         nothing
     end
 
+    close(ncin)
     return SIC
+end
+
+function read_SIC_OSISAF_quality(sic_file::String, idx_sector::Vector{CartesianIndex{2}};
+                                 SICPROD=("algorithm_uncertainty", "mask", "confidence_level"))
+
+    !isfile(sic_filen) && error("$(sic_filen) can not be found!")
+    ncin = NCDataset(sic_filen, "r");
+
+    SIClev = Dict{Symbol, Float32}()
+    
+    foreach(SICPROD) do PROD
+        if haskey(ncin, PROD)
+            tmp = isempty(idx_sector) ? ncin[PROD][:] : ncin[PROD][idx_sector]
+            sic_out = Vector{eltype(skipmissing(tmp))}(undef, size(tmp));
+            sic_out .= NaN
+            ii_nomis = findall(.!ismissing.(tmp))
+            sic_out[ii_nomis] = tmp[ii_nomis]
+            SIClev[PROD] = sic_out
+        else
+            @warn("$(SICPROD) not found in file. Nothing returned!")
+            nothing
+        end
+    end
+    close(ncin)
+    return SIClev
 end
 
 ##using NCDatasets

@@ -1,3 +1,8 @@
+name = "SEAICEtools"
+uuid = "1b82d508-2378-43a6-9d30-37d92e561168" 
+authors = ["Pablo Saavedra Garfias <pablosaa@uni-bonn.de>"]
+version = "0.1.0"
+
 [deps]
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 Navigation = "cc87a3b2-3706-4f35-b5b4-b2c85061916d"

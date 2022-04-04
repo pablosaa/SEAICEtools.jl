@@ -43,6 +43,11 @@ function LonLat_To_CenteredPolar(Origin_coor::Point{T}, Grid_coor::Matrix{Point{
 
     return θ_all, ρ_all
 end
+function LonLat_To_CenteredPolar(Origin_coor::Point{T}, Grid_coor::Vector{Point{T}}) where T<:Real
+    return let Target_coor = Grid_coor |> x->reshape(x, length(x), 1)
+        LonLat_to_CenteredPolar(Origin_coor,Target_coor)
+    end
+end
 function LonLat_To_CenteredPolar(lat_p::T, lon_p::T, 
                                  lat::Matrix{T}, lon::Matrix{T} ) where T<:Real
 
@@ -443,43 +448,4 @@ end # .../ end of module
 
 # end of script.
 
-
-### ****************************************************
-### -- Get ICON profiles
-##function getICONgData(sonde_file::String; vars=(:WD, :WS, :T) )
-##    ncin = NCDataset(sonde_file)
-##    T_C  = copy(ncin["temperature"][:,:])  # K
-##    @. T_C -= 273.15  # °C
-##    rh = copy(ncin["rh"][:,:])
-##    time = ncin["time"][:]
-##    height= copy(ncin["height"][:]) # km
-##
-##    uwind = ncin["uwind"][:,:]; # m/s
-##    miss_val = ncin["uwind"].attrib["missing_value"]
-##    uwind[uwind .≈ miss_val] .= NaN
-##
-##    vwind = ncin["vwind"][:,:]; # m/s
-##    miss_val = ncin["vwind"].attrib["missing_value"]
-##    vwind[vwind .≈ miss_val] .= NaN
-##
-##    ## Potential temperature
-##    ##θ = ncin["potential_temp"][:,:] # K
-##    ##miss_val = ncin["potential_temp"].attrib["missing_value"]
-##    ##θ[θ .≈ miss_val] .= NaN
-##    
-##    ## New variables for IVT
-##    qv = ncin["q"][:,:];  # gr/gr
-##    miss_val = ncin["q"].attrib["missing_value"]
-##    qv[qv .≈ miss_val] .= NaN
-##    
-##    pa = ncin["pressure"][:,:];  # Pa
-##    miss_val = ncin["pressure"].attrib["missing_value"]
-##    pa[pa .≈ miss_val] .= NaN
-##    
-##    close(ncin)
-##    wdir = similar(uwind)
-##    @. wdir = mod(atand(uwind/vwind), 360)
-##    return Dict(:time=>time, :height=>height[:,1], :T=>T_C, :WD=>wdir)
-##
-##end
 ### ----/
