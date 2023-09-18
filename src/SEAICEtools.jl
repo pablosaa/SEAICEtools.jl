@@ -444,6 +444,8 @@ include("read_prod_UniBremen.jl")
 include("read_prod_OSISAF.jl")
 
 include("read_prod_AWI.jl")
+
+include("aux_math_functions.jl")
 # ----/
 
 end # .../ end of module

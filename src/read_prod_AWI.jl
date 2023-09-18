@@ -15,11 +15,11 @@ using Dates
 
 """
 Function to find file that follows pattern given by PATH and year, month, day
-
+```julia-repl
 julia> file_name = FilePattern("/data/SAR", 2020, 4, 15)
 
 julia> file_name = FilePattern("/data/SAR", 2020, 4, 15, moved=false)
-
+```
 The first case returns:
 
 the second case returns:
@@ -57,22 +57,58 @@ function LatLon_AWI_product(filen::String)
     return xx, yy
 end
 
-function Data_Divergence_LeadFraction(filen::String, idx_sector::Vector{CartesianIndex{2}}; moved=true)
-    vars = if moved
+
+"""
+Read Lead Fraction data from Divergence product by Luisa Von Aldbyll.
+```julia-repl
+julia> LF = Data_Divergence_LeadFraction(file_name, idx_sector)
+julia> LF = Data_Divergence_LeadFraction(file_name, idx_sector, LFₚᵣₒ = :accumulated_2x)
+``` 
+WHERE:
+* file_name::String containing the full path to the sea ice divergence netCDF file,
+* idx_sector::Vector{CartesianIndex{2}} Indexes for the data to extract,
+* LFₚᵣₒ::Symbol (Optional) which variable to read, the following are supported:
+        ** :moved (default) LF drifted corrected to second time stamp,
+        ** :none  LF with no drifted corrtected, thus first time stamp,
+        ** :accumulated LF accumulated from 10 days
+        ** :accumulates_Tx, where T can be 0 to 9, for a specific accumulation.
+
+OUTPUT:
+* LF::Dict() With LF data as dictionary with keys :LF, :DIV, or :ACCUMULATES_Xx
+
+
+"""
+function Data_Divergence_LeadFraction(filen::String, idx_sector::Vector{CartesianIndex{2}}; LFₚᵣₒ = :moved)
+
+    # ancilliary functions:
+    # 1)
+    Missing2NaN(X) = replace(X, missing=>NaN)
+
+    # 2)
+    function list_variables(nc::NCDataset, var::Symbol)
+        tmp = Dict(Symbol(split(k,"_from")[1])=>k for k in keys(nc) if contains(k, String(var)))
+        !isempty(tmp) ? tmp : @error("No variable alike $(var) was found!")
+    end
+    # ..end of ancilliary functions.
+
+    # Opening given netCDF files:
+    nc = NCDataset(filen, "r");
+    
+    vars = if LFₚᵣₒ == :moved
        Dict(:DIV=>"filtered_div_moved",
             :LF=>"lead_fraction_moved")
-    else
+    elseif LFₚᵣₒ == :none
         Dict(:DIV=>"filtered_divergence",
              :LF=>"lead_fraction")
+    elseif contains(String(LFₚᵣₒ), String(:accumulated))
+        list_variables(nc, LFₚᵣₒ)
     end
 
     #vars = merge(vars, Dict(:x=>"x", :y=>"y"))
     
-    Missing2NaN(X) = replace(X, missing=>NaN)
-    
-    sar = NCDataset(filen, "r") do nc
-        Dict(k => Missing2NaN(nc[v][idx_sector]) for (k,v) in vars)
-    end
+    sar = Dict(k => Missing2NaN(nc[v][idx_sector]) for (k,v) in vars)
+
+    close(nc)
 
     return sar
 end
