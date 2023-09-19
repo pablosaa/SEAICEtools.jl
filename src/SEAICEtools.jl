@@ -63,8 +63,8 @@ function LonLat_To_CenteredPolar(Origin_coor::Point{T}, Grid_coor::Matrix{Point{
     return θ_all, ρ_all
 end
 function LonLat_To_CenteredPolar(Origin_coor::Point{T}, Grid_coor::Vector{Point{T}}) where T<:Real
-    return let Target_coor = Grid_coor |> x->reshape(x, length(x), 1)
-        LonLat_to_CenteredPolar(Origin_coor,Target_coor)
+    return let Target_coor = Grid_coor[:,:] 
+        LonLat_To_CenteredPolar(Origin_coor,Target_coor)
     end
 end
 function LonLat_To_CenteredPolar(lat_p::T, lon_p::T, 
