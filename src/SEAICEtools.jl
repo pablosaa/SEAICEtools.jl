@@ -2,7 +2,7 @@
 # mainly thought to be used on the Arctic
 
 
-module SEAICE
+module SEAICEtools
 
 using Navigation
 using Printf
@@ -12,7 +12,19 @@ using Statistics
 # *********************************************************
 # Functions:
 """
-Make box limist for a given center and distance:
+Returns the box limist for a given center and distance:
+
+```julia-repl
+julia> estimate_box(Pcenter, R_lim)
+julia> estimate_box(Pcenter, R_lim; δR = 1e3)
+```
+WHERE:
+* Pcenter::Point indicating center of the box,
+* R_lim::Float64 latest size of the box in m,
+* δR::Float64 (optional) add to R_lim, default 1e3 m,
+
+RETURN:
+* Tuple of latitudes and longitudes with the limits of the geographical box.
 
 """
 function estimate_box(Pcenter::Point, R_lim; δR = 1e3)
@@ -24,16 +36,23 @@ end
 
 # *********************************************************
 """
-θ, ρ = LonLat_To_CenteredPolar(lon\\_p, lat\\_p, lon, lat)
-
 Function to convert Longitude and Latitude to polar coordinates (azimuth, radius)
 centered on a given fixed coordinate point.
-Input:
-    (lon\\_p, lat\\_p) : centered coordinates ::Float64,
-            lon, lat : Arrays with domain coordinats ::Array{Float64,2}.
 
-Return:
-    θ, ρ : as Arrays centered in (lon\\_p, lat\\_p)
+```julia-repl
+julia> θ, ρ = LonLat_To_CenteredPolar(lon_p, lat_p, lon, lat)
+julia> θ, ρ = LonLat_To_CenteredPolar(coor_p, lon, lat)
+
+```
+WHERE:
+* coor\\_p::Point indicating the reference coordinate,
+* lon\\_p and lat\\_p::Float64 : coordinates of reference coordinate,
+* lon::Array longitude of the point to compute distance and azimuth,
+* lat::Array latitude of the point to compute distance and azimuth,
+
+RETURN:
+* θ::Array of azimuth angles of grid relative to (lon\\_p, lat\\_p),
+* ρ::Array of distance [km] from grid to coordinate (lon\\_p, lat\\_p),
 
 """
 function LonLat_To_CenteredPolar(Origin_coor::Point{T}, Grid_coor::Matrix{Point{T}}) where T<:Real
@@ -70,18 +89,19 @@ end
 
 # ---------------------------------------------------------------------
 """
-Function to extract the indexes of Longitude and Latidue within a box
+Function to extract the indexes of Longitude and Latitude within a box
 with limits given:
-USAGE:
-> idx_box = extract_LonLat_Box(lonlim, latlim, grid_coor)
-
+```julia-repl
+julia> idx_box = extract_LonLat_Box(lonlim, latlim, grid_coor)
+```
 WHERE:
-* lonlim::Tuple (lon_min, lon_max) [degrees]
-* latlim::Tuple (lat_min, lat_max) [degrees]
-* grid_coor::Matrix{Point}
-* idx_box::Vector{CartesianIndex{2}}
+* lonlim::Tuple (lon\\_min, lon\\_max) [degrees] longitude of box limits,
+* latlim::Tuple (lat\\_min, lat\\_max) [degrees] latitude of box limits,
+* grid_coor::Matrix{Point} coordinated of the grid,
 
-the output varaible idx_box are the indexes within the box.
+RETURN:
+* idx_box::Vector{CartesianIndex{2}} indexes of the grid within box.
+
 """
 function extract_LonLat_Box(lonlim::Tuple, latlim::Tuple, sic_coor::Matrix{Point{T}}) where T<:Real
 	xlon, ylat = Get_LonLat_From_Point(sic_coor)
@@ -91,19 +111,24 @@ end
 
 ## ---------------------------------------------------------------------
 """
-indexes = Get\\_Sector\\_Indexes(θ₀::Float32, θ₁::Float32, θ_all::Matrix{Real}; R_lim=50f0)
-
 Given an Array of azimuthal angles and radius the function returns 
 the Array's indexes corresponding to a sector or semi-circle W-N-E.
 The sector is limited by initial and final azimuth angles.
+```julia-repl
+julia> indexes = Get_Sector_Indexes(θ₀, θ₁, θ_all::Matrix)
+julia> indexes = Get_Sector_Indexes(θ₀, θ₁, θ_all::Matrix; R_lim=70f0)
+
+```
 
 NOTE: the Arrays named θ_all and D_all must be defined in memory! 
 
-Input:
-    θ₀, θ₁ : Initial and final azimtuh :: Float32
-    R\\_lim  : Optional radius in [km] :: Float32 (default R\\_lim=50.0 km)
-Return:
-    indexes: Array's indexes laying within the sector :: Int64
+WHERE:
+* θ₀::Float32, θ₁::Float32 Initial and final azimuth, respectively
+* θ\\_all::Matrix{Real} azimuth angles of all points in grid,
+* R\\_lim (optional) radius in [km], default R\\_lim=50.0 km
+
+RETURN:
+* indexes::Vector{Int64} indexes of grid poing laying within the sector.
 
 """
 function Get_Sector_Indexes(θ₀::T, θ₁::T, θ_all::Matrix, ρ_all::Matrix; R_lim=50f0) where T<:Real
@@ -119,10 +144,17 @@ end
 # --------------------------------------------------------------------------
 
 """
-        indexes = Get\\_Azimuthal\\_Indexes(Wind_Direction, θ; Δθ )
-
-Function to extract the indexes corresponding to a given fixed angle from an
-Array of azimuthal angles from a sector of interest.
+Function to extract the indexes from the grid's azimuth angles corresponding.
+The extracted indexes correspond to a given fixed azimuth angle e.g. wind direction.
+```julia-repl
+julia> indexes = Get_Azimuthal_Indexes(windir, θ, ρ; Δθ )
+```
+WHERE:
+* winddir::Real any fixed azimuth angle,
+* θ::Vector{Real} grid azimuth angles,
+* ρ::Vector{Real} grid distances,
+* Δθ::Real (optionl) conical sector to consider, e.g. winddir ± Δθ, default Δθ = 0.3f0
+* R\\_lim:: Real (optional) maximum distance [km] to consider, default 50 km
 
 """
 function Get_Azimuthal_Indexes(θ_wind::T,
@@ -160,7 +192,23 @@ end
 # ---------------------------------------------------------------------------
 
 """
-Function to extract SIC from a given azimuthal indexes:
+Function to extract SIC from a given azimuthal sector given the indexes.
+```julia-repl
+julia> lon, lat, SIC = SIC_from_Azimuth(winddir, θsec, Dsec, lon, lat, SIC_grid)
+julia> lon, lat, SIC = SIC_from_Azimuth(winddir, θsec, Dsec, lon, lat, SIC_grid, Δθ=3.0)
+julia> lon, lat, SIC = SIC_from_Azimuth(winddir, θsec, Dsec, lon, lat, SIC_grid, R_lim=70.0)
+```
+WHERE:
+* winddir::Real fixed azimuth direction to extract data,
+* θsec::Array grid azimuth angles where to extract data from,
+* Dsec::Array grid distances [km] where to extract data from,
+* Δθ::Real (optional) angle range to extract, e.g. winddir±Δθ, default 3f0,
+* R_lim::Real (optional) maximum distance to consider [km], default 50.0.
+
+RETURN:
+* lon, lat::Vector of longitude and latitude of the extracted grid points,
+* SIC::Vector sea ice data extracted from the input fixed azimuth direction.
+
 """
 function SIC_from_Azimuth(θ_wind::T,
                           θ_sec::Matrix,
@@ -168,9 +216,9 @@ function SIC_from_Azimuth(θ_wind::T,
                           lon::Matrix,
                           lat::Matrix,
                           SIC::Matrix;
-                          Δθ = 5f0, R_lim = 50f0) where T<:Real
+                          Δθ = 3f0, R_lim = 50f0) where T<:Real
     # Δθ  is the tolerance for azimuthal angle.
-    idx_wind = Get_Azimuthal_Indexes(θ_wind, θ_sec)
+    idx_wind = Get_Azimuthal_Indexes(θ_wind, θ_sec, D_sec, Δθ=Δθ, R_lim=R_lim)
        
     return lon[idx_wind][:], lat[idx_wind][:], SIC[idx_wind][:]
 end
@@ -181,7 +229,19 @@ Function to create the coordinates for drawing a semi-circle.
 semi-circle centeres at P_nsa,
 Initial and final azimuthal angles: θ₀ , θ₁
 Optional parameters are: R_lim (default 50km) and Ncirc (default 180)
-    
+```julia-repl
+julia> P_circ = Create_Semi_Circle(Pₒ, θ₀, θ₁)
+julia> P_circ = Create_Semi_Circle(Pₒ, θ₀, θ₁; R_lim=70e0, Ncirc=360)
+```
+WHERE:
+* Pₒ::Point center coordinate in grid,
+* θ₀::Real initial azimuth,
+* θ₁::Real final azimuth,
+* R\\_lim::Float64 (optional) radius [km] of the semi-circle, default 50e3,
+* Ncirc::Int64 (optional) number of point to create the semi-circle, default 180.
+
+RETURN:
+* P_circ::Vector{Point} coordinated of the semi-circle centered at Pₒ
 """
 function Create_Semi_Circle(P_nsa::Point, θ₀::T, θ₁::T;
                             R_lim=50e3, Ncirc=180) where T<:Real
@@ -202,8 +262,17 @@ end
 """
 Function to extract the Lontitude and Latitude from a ::Point type variable.
 The input variable can be scalar or matrix:
-> lon, lat = Get_LonLat_From_Point(P₀::Point)
-> lon, lat = Get_LonLat_From_Point(P₀::Matrix{Point})
+```julia-repl
+julia> lon, lat = Get_LonLat_From_Point(P₀::Point)
+julia> lon, lat = Get_LonLat_From_Point(P₀::Matrix{Point})
+```
+WHERE:
+* P₀::Point given Point to extract latitude and longitude from,
+* P₀::Matrix{Point} same for Matrix of Point,
+
+RETURN:
+* lon::Real longitude of the given point P₀,
+* lat::Real latitude of the given point P₀.
 """
 function Get_LonLat_From_Point(P₀::Point)
     return P₀.λ, P₀.ϕ
