@@ -21,7 +21,7 @@ julia> estimate_box(Pcenter, R_lim; δR = 1e3)
 WHERE:
 * Pcenter::Point indicating center of the box,
 * R_lim::Float64 latest size of the box in m,
-* δR::Float64 (optional) add to R_lim, default 1e3 m,
+* δR::Float64 (optional) add to R\\_lim, default 1e3 m,
 
 RETURN:
 * Tuple of latitudes and longitudes with the limits of the geographical box.
@@ -97,7 +97,7 @@ julia> idx_box = extract_LonLat_Box(lonlim, latlim, grid_coor)
 WHERE:
 * lonlim::Tuple (lon\\_min, lon\\_max) [degrees] longitude of box limits,
 * latlim::Tuple (lat\\_min, lat\\_max) [degrees] latitude of box limits,
-* grid_coor::Matrix{Point} coordinated of the grid,
+* grid\\_coor::Matrix{Point} coordinated of the grid,
 
 RETURN:
 * idx_box::Vector{CartesianIndex{2}} indexes of the grid within box.
@@ -203,7 +203,7 @@ WHERE:
 * θsec::Array grid azimuth angles where to extract data from,
 * Dsec::Array grid distances [km] where to extract data from,
 * Δθ::Real (optional) angle range to extract, e.g. winddir±Δθ, default 3f0,
-* R_lim::Real (optional) maximum distance to consider [km], default 50.0.
+* R\\_lim::Real (optional) maximum distance to consider [km], default 50.0.
 
 RETURN:
 * lon, lat::Vector of longitude and latitude of the extracted grid points,
@@ -225,10 +225,9 @@ end
 
 # -----------------------------------------------------------------------------
 """
-Function to create the coordinates for drawing a semi-circle.
-semi-circle centeres at P_nsa,
+Function to create the coordinates for a semi-circle centered at Pₒ,
 Initial and final azimuthal angles: θ₀ , θ₁
-Optional parameters are: R_lim (default 50km) and Ncirc (default 180)
+Optional parameters are: R\\_lim (default 50km) and Ncirc (default 180)
 ```julia-repl
 julia> P_circ = Create_Semi_Circle(Pₒ, θ₀, θ₁)
 julia> P_circ = Create_Semi_Circle(Pₒ, θ₀, θ₁; R_lim=70e0, Ncirc=360)
@@ -241,7 +240,7 @@ WHERE:
 * Ncirc::Int64 (optional) number of point to create the semi-circle, default 180.
 
 RETURN:
-* P_circ::Vector{Point} coordinated of the semi-circle centered at Pₒ
+* P\\_circ::Vector{Point} coordinated of the semi-circle centered at Pₒ
 """
 function Create_Semi_Circle(P_nsa::Point, θ₀::T, θ₁::T;
                             R_lim=50e3, Ncirc=180) where T<:Real
