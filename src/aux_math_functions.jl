@@ -279,9 +279,9 @@ function satellite_time(filein::String, heute::Date; VecTime=nothing)
     end
 
     if typeof(VecTime)<:Vector
-        return argmin(abs.(heute .- VecTime))
+        return argmin(abs.(uhrzeit .- VecTime))
     elseif isnothing(VecTime)
-        return hour(heute), minute(heute)
+        return hour(uhrzeit), minute(uhrzeit)
     else
         @error "wrong input VecTime of type $(typeof(VecTime))"
     end
