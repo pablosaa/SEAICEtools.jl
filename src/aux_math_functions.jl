@@ -236,6 +236,63 @@ function couple2grid(x::Vector{T}, y::Vector{T}) where T<:Real
     return X, Y
 end
 # ----/
+
+#=  ****************************************************************************
+        Function to obtain the time stamp from SAR Sentinel-1A overpass
+        If the SAR data file is not found (or not exist) then 12:00 is assumed.
+        For MODIS-AMSR2 products, it is assumed the same time stamp as for SAR.
+=#
+"""
+Function to obtain the time stamp from file name of satellite product.
+If given the date the file cannot be identified, then nothing is returned.
+```julia-repl
+julia> HH, MM = satellite_time(filein, yy, mm, dd)
+julia> HH, MM = satellite_time(filein, someday)
+julia> idx_day = satellite_time(filein, someday; VecTime=hours_in_day)
+```
+WHERE:
+* filein::String satellite file name,
+* yy::Int year
+* mm::Int month
+* dd::Int day
+* someday::Date date to look at filein, same as Date(yy,mm,dd)
+* hours\\_in\\_day::Vector{DateTime} containing possible hours to satellite overpass
+
+RETURN:
+* HH::Int hour of the satellite overpass
+* MM::Int minute of the satellite overpass
+* idx\\_day::Int the index of vector ```hours_in_day``` closest to satellite overpass
+
+NOTE: if time stamp not found, then returns 12:00
+"""
+function satellite_time(filein::String, heute::Date; VecTime=nothing)
+
+    uhrzeit = let filen = basename(filein)
+        tmp = Dates.format(heute, "yyyymmdd") |> x->findfirst(x, filen)
+        isnothing(tmp) && error("$(heute) cannot be found in $(filen)")
+        try
+            DateTime(filen[tmp[1]:(tmp[end]+7)], "yyyymmddTHHMMSS")
+        catch
+            @warn "Time stamp not found in $(filen)"
+            DateTime(heute) + Hour(12)
+        end
+    end
+
+    if typeof(vectime)<:vector
+        return argmin(abs.(heute .- vectime))
+    elseif isnothing(vectime)
+        return hour(heute), minute(heute)
+    else
+        @error "wrong input vectime of type $(typeof(vectime))"
+    end
+end
+
+function satellite_time(filein::String, yy::Int, mm::Int, dd::Int; VecTime=nothing)
+    return satellite_time(filein, Date(yy,mm,dd); VecTime=VecTime)
+end
+# ----/
+
+
 #
 end  # end of module MATH
 
