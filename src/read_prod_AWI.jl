@@ -16,23 +16,35 @@ using Dates
 """
 Function to find file that follows pattern given by PATH and year, month, day
 ```julia-repl
-julia> file_name = FilePattern("/data/SAR", 2020, 4, 15)
-
+julia> file_name = FilePattern(PATH_DATA, PROD_PATH, yy, mm, dd)
 julia> file_name = FilePattern("/data/SAR", 2020, 4, 15, moved=false)
+julia> file_name = FilePattern("/data/SAR", 2020, 4, 15, Format4date="ddmmyyyy")
 ```
+
+WHERE:
+* PATH\\_DATA::String indicating base path to the data location,
+* PROD\\_PATH::String indicating the path or name to the product to locate,
+* yy::Int year on data file,
+* mm::Int month on data file,
+* dd::Int day on data file,
+* Format4date::String (optional) date format to identify, default "yyyymmddT"
+
+RETURN:
+* file\\_name::String full path of file name corresponding to the given date.
+
 The first case returns:
 
 the second case returns:
 
 """
-function FilePattern(PATH::String, PROD::String, yy::Number, mm::Number, dd::Number; moved=true)
+function FilePattern(PATH::String, PROD::String, yy::Number, mm::Number, dd::Number; moved=true, Format4Date="yyyymmddT")
 
     DIRSAR = joinpath(PATH, PROD, "$(yy)")
 
     !isdir(DIRSAR) && @error "I could not find directory $(DIRSAR)"
     tmp = readdir(DIRSAR, join=true)
     
-    today = Date(yy, mm, dd) |> x->Dates.format(x, "yyyymmddT")
+    today = Date(yy, mm, dd) |> x->Dates.format(x, Format4Date)
     intmp = contains.(tmp, today) |> findall
     tmp = tmp[intmp]
 
