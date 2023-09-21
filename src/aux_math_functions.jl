@@ -246,26 +246,29 @@ end
 Function to obtain the time stamp from file name of satellite product.
 If given the date the file cannot be identified, then nothing is returned.
 ```julia-repl
-julia> HH, MM = satellite_time(filein, yy, mm, dd)
-julia> HH, MM = satellite_time(filein, someday)
-julia> idx_day = satellite_time(filein, someday; VecTime=hours_in_day)
+julia> hourtime = satellite_time(filein, yy, mm, dd)
+julia> hourtime = satellite_time(filein, someday)
+julia> idx_day, hourtime = satellite_time(filein, someday; VecTime=hours_in_day)
+julia> HH, MM = satellite_time(filein, someday; format=false)
 ```
 WHERE:
 * filein::String satellite file name,
-* yy::Int year
-* mm::Int month
-* dd::Int day
-* someday::Date date to look at filein, same as Date(yy,mm,dd)
-* hours\\_in\\_day::Vector{DateTime} containing possible hours to satellite overpass
+* yy::Int year,
+* mm::Int month,
+* dd::Int day,
+* someday::Date date to look at filein, same as Date(yy,mm,dd),
+* hours\\_in\\_day::Vector{DateTime} containing possible hours to satellite overpass,
+* format::Bool (optional) output as DateTime format (default) or tuple (hour, minute).
 
 RETURN:
+* hourtime::DateTime indicating the overpass time,
 * HH::Int hour of the satellite overpass
 * MM::Int minute of the satellite overpass
 * idx\\_day::Int the index of vector ```hours_in_day``` closest to satellite overpass
 
 NOTE: if time stamp not found, then returns 12:00
 """
-function satellite_time(filein::String, heute::Date; VecTime=nothing)
+function satellite_time(filein::String, heute::Date; VecTime=nothing, format=true)
 
     uhrzeit = let filen = basename(filein)
         tmp = Dates.format(heute, "yyyymmdd") |> x->findfirst(x, filen)
@@ -279,9 +282,10 @@ function satellite_time(filein::String, heute::Date; VecTime=nothing)
     end
 
     if typeof(VecTime)<:Vector
-        return argmin(abs.(uhrzeit .- VecTime))
+        idx = argmin(abs.(uhrzeit .- VecTime))
+        return idx, VecTime[idx]
     elseif isnothing(VecTime)
-        return hour(uhrzeit), minute(uhrzeit)
+        return format ? uhrzeit : (hour(uhrzeit), minute(uhrzeit))
     else
         @error "wrong input VecTime of type $(typeof(VecTime))"
     end
