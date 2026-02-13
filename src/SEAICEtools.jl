@@ -236,7 +236,7 @@ WHERE:
 * Pₒ::Point center coordinate in grid,
 * θ₀::Real initial azimuth,
 * θ₁::Real final azimuth,
-* R\\_lim::Float64 (optional) radius [km] of the semi-circle, default 50e3,
+* R\\_lim::Float64 (optional) radius [m] of the semi-circle, default 50e3 m,
 * Ncirc::Int64 (optional) number of point to create the semi-circle, default 180.
 
 RETURN:
@@ -474,7 +474,7 @@ USAGE:
 
 WHERE:
 * ref_coor::Point  is the initial reference point
-* R_lim::Float64 is the distance in km
+* R_lim::Float64 is the distance in m
 * wind_dir::Vector{Float64} is the vector with several angles in degrees
 RETURN:
 * lon_lines, lat_lines::Vector{Float64} are pairs of points with lon and lat from
