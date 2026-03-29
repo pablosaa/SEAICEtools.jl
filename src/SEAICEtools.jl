@@ -469,15 +469,15 @@ end
 Function to make pair of vectors for lon, lat from a given list of
 angles and distance to a center point
 USAGE:
-
+```repl-julia
 > lon_lines, lat_lines = create_pair_lines(ref_coor, R_lim, wind_dir)
-
+```
 WHERE:
-* ref_coor::Point  is the initial reference point
-* R_lim::Float64 is the distance in km
-* wind_dir::Vector{Float64} is the vector with several angles in degrees
+* ```ref_coor::Point``` is the initial reference point,
+* ```R_lim::Float64``` or ```R_lim::Vector{Float64}``` is the distance in km,
+* ```wind_dir::Vector{Float64}``` is the vector with several angles in degrees,
 RETURN:
-* lon_lines, lat_lines::Vector{Float64} are pairs of points with lon and lat from
+* ```lon_lines, lat_lines::Vector{Float64}``` are pairs of points with lon and lat from
 R_lim at angle wind_dir[i] to reference point ref_coor
 
 """
