@@ -236,7 +236,7 @@ WHERE:
 * Pₒ::Point center coordinate in grid,
 * θ₀::Real initial azimuth,
 * θ₁::Real final azimuth,
-* R\\_lim::Float64 (optional) radius [km] of the semi-circle, default 50e3,
+* R\\_lim::Float64 (optional) radius [m] of the semi-circle, default 50e3 m,
 * Ncirc::Int64 (optional) number of point to create the semi-circle, default 180.
 
 RETURN:
