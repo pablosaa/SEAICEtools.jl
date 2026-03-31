@@ -1,16 +1,21 @@
 # SEAICEtools.jl
 
-Julia Package to work with remote sensing data of Sea Ice Concentration.
+## Julia Package to work with remote sensing data of Sea Ice.
 
+<center>
 <img width="466" height="480" alt="mosaic0152_20191115T03271573_20191118T05301574_LF" src="https://github.com/user-attachments/assets/c91c4345-8907-4c2c-a2a0-d5cbe49cc6be" />
-~Sea ice lead fraction~
+
+*Figure of Sea ice lead fraction (LF) during the MOSAiC expedition. The red-star represent the RV Polarstern and the black line is the dift trajectory during the previos days. Adapted from [5].*
+</center>
 
 At this point only the following data providers are supported:
 - Institute of Environmental Physics (IEP) at the University of Bremen, [1,2]:
-  * AMSRE -AMSR2: SIC Arctic-3.125km @ 5km
-  * Merged AMSR2-MODIS: SIC @ 1km
+  * AMSRE -AMSR2: SIC Arctic-3.125km @ 5 km
+  * Merged AMSR2-MODIS: SIC @ 1 km
 - SENTINEL-1A by ESA provided by [3]:
-  * lead fraction (LF) and sea ice divergence (DIV)
+  * lead fraction (LF) and sea ice divergence (DIV) @ 0.7 km
+- OSI SAF EUMETSAT
+  * SSMIS, AMSR2 SIC @ 10 km
 
 ![Data repository](https://seaice.uni-bremen.de/sea-ice-concentration/amsre-amsr2/)
 
