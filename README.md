@@ -2,11 +2,11 @@
 
 ## Julia Package to work with remote sensing data of Sea Ice.
 
-<center>
+<p align="center">
 <img width="466" height="480" alt="mosaic0152_20191115T03271573_20191118T05301574_LF" src="https://github.com/user-attachments/assets/c91c4345-8907-4c2c-a2a0-d5cbe49cc6be" />
 
-*Figure of Sea ice lead fraction (LF) during the MOSAiC expedition. The red-star represent the RV Polarstern and the black line is the dift trajectory during the previos days. Adapted from [5].*
-</center>
+ *Figure of Sea ice lead fraction (LF) during the MOSAiC expedition. The red-star represent the RV Polarstern and the black line is the dift trajectory during the previos days. Adapted from [5].*
+</p>
 
 At this point only the following data providers are supported:
 - Institute of Environmental Physics (IEP) at the University of Bremen, [1,2]:
@@ -17,7 +17,7 @@ At this point only the following data providers are supported:
 - OSI SAF EUMETSAT
   * SSMIS, AMSR2 SIC @ 10 km
 
-![Data repository](https://seaice.uni-bremen.de/sea-ice-concentration/amsre-amsr2/)
+[To Uni Bremen data repository](https://seaice.uni-bremen.de/sea-ice-concentration/amsre-amsr2/)
 
 ### References to data sources where the package can be used:
 [1] Spreen, G., Kaleschke, L., and Heygster, G.: Sea ice remote sensing using AMSR-E 89-GHz channels, Journal of Geophysical Research:
