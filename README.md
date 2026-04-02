@@ -1,6 +1,7 @@
 # SEAICEtools.jl
 
 ## Julia Package to work with remote sensing data of Sea Ice.
+[![DOI](https://zenodo.org/badge/359243976.svg)](https://doi.org/10.5281/zenodo.19385023)
 
 <p align="center">
 <img width="466" height="480" alt="mosaic0152_20191115T03271573_20191118T05301574_LF" src="https://github.com/user-attachments/assets/c91c4345-8907-4c2c-a2a0-d5cbe49cc6be" />
